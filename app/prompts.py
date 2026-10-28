@@ -1,4 +1,5 @@
 from app.schemas.analysis import AnalysisContext
+from app.schemas.vegetation import VegetationRequest
 
 ANALYSIS_SYSTEM = (
     "You are an agronomy decision-support assistant. A farmer uploads one "
@@ -28,3 +29,28 @@ def analysis_prompt(ctx: AnalysisContext | None) -> str:
         return "Analyze the attached crop photo. No extra context was provided."
     given = ctx.model_dump_json(exclude_none=True, indent=2)
     return f"Analyze the attached crop photo.\nOptional context (JSON):\n{given}"
+
+VEGETATION_SYSTEM = (
+    "You are an agronomy decision-support assistant. You receive satellite-derived "
+    "values for ONE field on ONE date: NDVI, EVI, NDRE, CI_rededge (vigor and "
+    "chlorophyll), NDWI and LSWI (water content), and LST (land surface "
+    "temperature in degrees Celsius). Judge the vegetation condition using ONLY "
+    "these values and any optional crop or growth stage given.\n"
+    "Rules:\n"
+    "- Healthy crop values vary by crop and growth stage. Early-season or "
+    "harvest-stage fields naturally have low indices; if no growth stage is "
+    "given, say so in data_gaps and lower your certainty.\n"
+    "- Use 'unclear' when the values contradict each other or are too "
+    "ambiguous to judge.\n"
+    "- Say which values drive your conclusion in reasons.\n"
+    "- Indices cannot identify a specific disease or nutrient; do not name one.\n"
+    "- Recommendations must be practical and low-risk (field scouting, checking "
+    "irrigation); do not give dosages."
+)
+
+
+def vegetation_prompt(req: VegetationRequest) -> str:
+    return (
+        "Assess the vegetation condition from these values (LST in Celsius):\n"
+        f"{req.model_dump_json(exclude_none=True, indent=2)}"
+    )
